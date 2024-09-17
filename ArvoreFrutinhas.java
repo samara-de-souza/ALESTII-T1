@@ -61,117 +61,95 @@ public class ArvoreFrutinhas {
         return new Resultado(caminhoAtual, somaAtual);
     }
 
-    public static char[][] lerArquivo(String nomeArquivo) throws IOException {
-        BufferedReader br = new BufferedReader(new FileReader(nomeArquivo));
-
-        String[] dimensoes = br.readLine().split(" ");
-        int linhas = Integer.parseInt(dimensoes[0]);
-        int colunas = Integer.parseInt(dimensoes[1]);
-        System.out.println("Dimensões da matriz: " + linhas + " x " + colunas);
-
-        char[][] matriz = new char[linhas][colunas];
-
-        // Lê as linhas subsequentes e preenche a matriz
+    public static char[][] lerArquivoComNull(String nomeArquivo) throws IOException {
+        List<char[]> linhas = new ArrayList<>();
+        BufferedReader reader = new BufferedReader(new FileReader(nomeArquivo));
+        
         String linha;
-        int index = 0;
-        while ((linha = br.readLine()) != null) {
-            matriz[index] = linha.toCharArray();
-            System.out.println(linha); 
-            index++;
+        while ((linha = reader.readLine()) != null) {
+            // Converte espaços em branco para null (representado como ' ')
+            char[] linhaArray = new char[linha.length()];
+            for (int i = 0; i < linha.length(); i++) {
+                if (linha.charAt(i) == ' ') {
+                    linhaArray[i] = ' ';  // Espaços em branco
+                } else {
+                    linhaArray[i] = linha.charAt(i);  // Outros caracteres
+                }
+            }
+            linhas.add(linhaArray);
         }
-        br.close();
+        reader.close();
+        
+        return linhas.toArray(new char[0][]);  // Converte para matriz 2D
+    }    
 
-        System.out.println("Matriz final:");
-        for (char[] row : matriz) {
-            System.out.println(Arrays.toString(row));
-        }
-        return matriz;
-    }
-
-    public static Nodo construirArvore(char[][] matriz) {
+    public static Nodo construirArvoreComNull(char[][] matriz) {
         int linhas = matriz.length;
         int colunas = matriz[0].length;
-        Nodo raiz = null;
+        Nodo[][] nodos = new Nodo[linhas][colunas];  
 
+        for (int i = 0; i < linhas; i++) {
+            for (int j = 0; j < colunas; j++) {
+                char atual = matriz[i][j];
+                if (atual == ' ') {
+                    continue; 
+                }
+                if (Character.isDigit(atual)) {
+                    int valor = Character.getNumericValue(atual);
+                    nodos[i][j] = new Nodo(valor);
+                    System.out.println("Nodo com valor " + valor + " criado na posição: " + i + ", " + j);
+                }
+                if (atual == '#') {
+                    nodos[i][j] = new Nodo(0);  // Folha tem valor 0
+                    System.out.println("Folha criada na posição: " + i + ", " + j);
+                }
+            }
+        }
+        for (int i = 0; i < linhas; i++) {
+            for (int j = 0; j < colunas; j++) {
+                char atual = matriz[i][j];
+                if (nodos[i][j] != null) {
+                    if (i > 1 && matriz[i - 1][j] == '|') {
+                        nodos[i][j].centro = nodos[i - 2][j];  // Conectar ao nodo superior
+                        System.out.println("Conectando nodo " + i + ", " + j + " ao centro.");
+                    }
+                    if (i > 1 && j > 1 && matriz[i - 1][j - 1] == '\\') {
+                        nodos[i][j].esquerda = nodos[i - 2][j - 2];  // Conectar ao nodo à esquerda
+                        System.out.println("Conectando nodo " + i + ", " + j + " à esquerda.");
+                    }
+                    if (i > 1 && j < colunas - 2 && matriz[i - 1][j + 1] == '/') {
+                        nodos[i][j].direita = nodos[i - 2][j + 2];  // Conectar ao nodo à direita
+                        System.out.println("Conectando nodo " + i + ", " + j + " à direita.");
+                    }
+                    if (atual == 'V' && i > 0) {
+                        if (j > 0) {
+                            nodos[i][j].esquerda = nodos[i - 1][j - 1];  // Conectar à esquerda
+                        }
+                        if (j < colunas - 1) {
+                            nodos[i][j].direita = nodos[i - 1][j + 1];  // Conectar à direita
+                        }
+                        System.out.println("Conectando bifurcação V na posição " + i + ", " + j);
+                    }
+                    if (atual == 'W' && i > 0) {
+                        if (j > 0) {
+                            nodos[i][j].esquerda = nodos[i - 1][j - 1];  // Conectar à esquerda
+                        }
+                        nodos[i][j].centro = nodos[i - 1][j];  // Conectar ao centro
+                        if (j < colunas - 1) {
+                            nodos[i][j].direita = nodos[i - 1][j + 1];  // Conectar à direita
+                        }
+                        System.out.println("Conectando bifurcação W na posição " + i + ", " + j);
+                    }
+                }
+            }
+        }
         for (int j = 0; j < colunas; j++) {
-            if (matriz[linhas - 1][j] == '\\' || matriz[linhas - 1][j] == '|' || matriz[linhas - 1][j] == '/' || 
-                matriz[linhas - 1][j] == 'V' || matriz[linhas - 1][j] == 'W') {
-                System.out.println("Iniciando construção da árvore a partir da raiz encontrada na posição: " + (linhas - 1) + ", " + j);
-                raiz = construirRamos(matriz, linhas - 1, j);  
-                break;  
+            if (nodos[linhas - 1][j] != null) {
+                System.out.println("Raiz encontrada na posição " + (linhas - 1) + ", " + j);
+                return nodos[linhas - 1][j];  // Retorna a raiz encontrada na última linha
             }
         }
-    
-        if (raiz == null) {
-            System.out.println("Nenhuma raiz válida encontrada (/, |, \\, V ou W) na última linha da matriz.");
-        }
-    
-        return raiz;
-    }
-    
-    private static Nodo construirRamos(char[][] matriz, int linha, int coluna) {
-        if (linha < 0 || coluna < 0 || coluna >= matriz[0].length) {
-            return null;  // Se for uma posição inválida, retorna null
-        }
-    
-        char atual = matriz[linha][coluna];
-    
-        // Se for um dos ponteiros (\, |, /, V, W), continua conectando os nodos
-        if (atual == '\\' || atual == '|' || atual == '/' || atual == 'V' || atual == 'W') {
-            System.out.println("Ponteiro encontrado na posição: " + linha + ", " + coluna);
-    
-            Nodo nodo = new Nodo(0);  // Nodo temporário para continuar a conexão
-    
-            // Para bifurcação W, conecta os três ramos (esquerda, centro e direita)
-            if (atual == 'W') {
-                System.out.println("Conectando bifurcação tripla (W) na posição: " + linha + ", " + coluna);
-                nodo.esquerda = construirRamos(matriz, linha - 1, coluna - 1);  // Nodo à esquerda
-                nodo.centro = construirRamos(matriz, linha - 1, coluna);  // Nodo diretamente acima
-                nodo.direita = construirRamos(matriz, linha - 1, coluna + 1);  // Nodo à direita
-            }
-    
-            // Para bifurcação V, conecta dois ramos (esquerda e direita)
-            if (atual == 'V') {
-                System.out.println("Conectando bifurcação dupla (V) na posição: " + linha + ", " + coluna);
-                nodo.esquerda = construirRamos(matriz, linha - 1, coluna - 1);  // Nodo à esquerda
-                nodo.direita = construirRamos(matriz, linha - 1, coluna + 1);  // Nodo à direita
-            }
-    
-            // Verifica se há uma linha acima (|) conectando a outro número ou folha
-            if (atual == '|') {
-                System.out.println("Conectando nodo acima (centro) na posição: " + (linha - 1) + ", " + coluna);
-                nodo.centro = construirRamos(matriz, linha - 1, coluna);  // Nodo diretamente acima
-            }
-    
-            // Verifica se há uma linha à esquerda (\) conectando a outro número ou folha
-            if (atual == '\\') {
-                System.out.println("Conectando nodo à esquerda na posição: " + (linha - 1) + ", " + (coluna - 1));
-                nodo.esquerda = construirRamos(matriz, linha - 1, coluna - 1);  // Nodo à esquerda
-            }
-    
-            // Verifica se há uma linha à direita (/) conectando a outro número ou folha
-            if (atual == '/') {
-                System.out.println("Conectando nodo à direita na posição: " + (linha - 1) + ", " + (coluna + 1));
-                nodo.direita = construirRamos(matriz, linha - 1, coluna + 1);  // Nodo à direita
-            }
-    
-            return nodo;  // Retorna o nodo conectado
-        }
-    
-        // Se for um número, cria um novo nodo com o valor do número
-        if (Character.isDigit(atual)) {
-            int valor = Character.getNumericValue(atual);
-            Nodo nodo = new Nodo(valor);
-            System.out.println("Nodo com valor " + valor + " criado na posição: " + linha + ", " + coluna);
-            return nodo;  // Retorna o nodo criado com o valor
-        }
-    
-        // Se for uma folha (#), indica o fim do caminho
-        if (atual == '#') {
-            System.out.println("Folha encontrada na posição: " + linha + ", " + coluna);
-            return new Nodo(0);  // Folhas têm valor 0
-        }
-    
-        return null;  // Se não for ponteiro nem número nem folha, retorna null
+        System.out.println("Nenhuma raiz encontrada. Verifique a matriz.");
+        return null;  
     }    
 }
