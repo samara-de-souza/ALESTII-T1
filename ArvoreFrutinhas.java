@@ -1,262 +1,196 @@
-import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
 
-public class ArvoreFrutinhas {
-    static class Nodo {
-        int valor;
-        Nodo esquerda, direita, centro;
+import java.io.*; 
+import java.util.*; 
+ 
+public class ArvoreFrutinhas { 
+    // Métodos para ler o arquivo // 
+ 
+    public static char[][] lerArquivo(String nomeArquivo) throws IOException { 
+        BufferedReader br = new BufferedReader(new FileReader(nomeArquivo)); 
+        List<char[]> linhas = new ArrayList<>(); 
+        String linha; 
+        int maxColunas = 0; 
+         
+        // Ignorar a primeira linha 
+        br.readLine(); 
+         
+        // Ler o arquivo e encontrar o número máximo de colunas 
+        while ((linha = br.readLine()) != null) { 
+            // Substituir espaços em branco por pontos 
+            linha = linha.replace(' ', '.'); 
+            if (linha.length() > maxColunas) { 
+                maxColunas = linha.length(); 
+            } 
+            linhas.add(linha.toCharArray()); 
+        } 
+        br.close(); 
+     
+        // Preencher a matriz com pontos e manter a estrutura da árvore 
+        char[][] arvore = new char[linhas.size()][maxColunas]; 
+        for (int i = 0; i < linhas.size(); i++) { 
+            char[] linhaAtual = linhas.get(i); 
+            for (int j = 0; j < maxColunas; j++) { 
+                if (j < linhaAtual.length) { 
+                    arvore[i][j] = linhaAtual[j]; 
+                } else { 
+                    arvore[i][j] = '.'; // Preencher com pontos 
+                } 
+            } 
+        } 
+ 
+        imprimirMatrizEmArquivo(arvore, "saida.txt"); 
+ 
+        return arvore; 
+    } 
+ 
+    private static void imprimirMatrizEmArquivo(char[][] matriz, String nomeArquivo) throws IOException { 
+        BufferedWriter bw = new BufferedWriter(new FileWriter(nomeArquivo)); 
+        for (char[] linha : matriz) { 
+            bw.write(linha); 
+            bw.newLine(); 
+        } 
+        bw.close(); 
+    } 
+ 
+    // Métodos para ler o arquivo // 
+ 
+    // Método de Teste // 
+    public static void imprimirArvore(char[][] arvore) { 
+        System.out.println("Estrutura da árvore:"); 
+        for (int i = 0; i < arvore.length; i++) { 
+            for (int j = 0; j < arvore[0].length; j++) { 
+                System.out.print(arvore[i][j] + " "); 
+            } 
+            System.out.println(); 
+        } 
+    } 
+    // Método de Teste // 
+ 
+    public static void calcularSomasDosGalhos(char[][] arvore) { 
+        // Listar todas as posições de folhas (marcadas com '#') 
+        List<int[]> folhas = new ArrayList<>(); 
+        for (int linha = 0; linha < arvore.length; linha++) { 
+            for (int coluna = 0; coluna < arvore[0].length; coluna++) { 
+                if (arvore[linha][coluna] == '#') { 
+                    folhas.add(new int[]{linha, coluna}); // Adiciona a posição da folha 
+                } 
+            } 
+        } 
+        // Encontrar a raiz (V ou |) na última linha 
+        int linhaRaiz = arvore.length - 1; 
+        int colunaRaiz = -1; 
+        for (int coluna = 0; coluna < arvore[0].length; coluna++) { 
+            if (arvore[linhaRaiz][coluna] == 'V' || arvore[linhaRaiz][coluna] == '|') { 
+                colunaRaiz = coluna; 
+                break; 
+            } 
+        } 
+        if (colunaRaiz == -1) { 
+            System.out.println("Raiz não encontrada."); 
+            return; 
+        } 
+        System.out.println("Raiz encontrada na posição (" + linhaRaiz + ", " + colunaRaiz + ")"); 
+        // Para cada folha, percorre o caminho da raiz até ela e soma os valores 
+        for (int i = 0; i < folhas.size(); i++) { 
+            int[] folha = folhas.get(i); 
+            Set<String> visitados = new HashSet<>(); // Para garantir que não visitamos a mesma posição mais de uma vez 
+            int somaGalho = andarNaArvoreAteFolha(arvore, linhaRaiz, colunaRaiz, folha[0], folha[1], visitados); 
+            System.out.println("Soma do galho " + (i + 1) + ": " + somaGalho); 
+        } 
+     } 
+     
+    private static int andarNaArvoreAteFolha(char[][] arvore, int linhaAtual, int colunaAtual, int linhaFolha, int colunaFolha, Set<String> visitados) { 
+        // Checar se chegamos à folha
 
-        public Nodo(int valor) {
-            this.valor = valor;
-            this.esquerda = null;
-            this.direita = null;
-            this.centro = null;
+        if (linhaAtual == linhaFolha && colunaAtual == colunaFolha) { 
+            return Character.isDigit(arvore[linhaAtual][colunaAtual]) ? Character.getNumericValue(arvore[linhaAtual][colunaAtual]) : 0; 
+        } 
+        // Marcar posição atual como visitada 
+        String posicaoAtual = linhaAtual + "," + colunaAtual; 
+        if (visitados.contains(posicaoAtual)) { 
+            return 0; 
+        } 
+        visitados.add(posicaoAtual); 
+        // Somar o valor atual, se for um número 
+        int somaAtual = Character.isDigit(arvore[linhaAtual][colunaAtual]) ? Character.getNumericValue(arvore[linhaAtual][colunaAtual]) : 0; 
+        // Checar os movimentos possíveis 
+        int soma = 0; 
+        if (linhaAtual > 0 && colunaAtual > 0 && arvore[linhaAtual - 1][colunaAtual - 1] != '.') { // Esquerda cima 
+            soma = andarNaArvoreAteFolha(arvore, linhaAtual - 1, colunaAtual - 1, linhaFolha, colunaFolha, visitados); 
+        } else if (linhaAtual > 0 && arvore[linhaAtual - 1][colunaAtual] != '.') { // Cima 
+            soma = andarNaArvoreAteFolha(arvore, linhaAtual - 1, colunaAtual, linhaFolha, colunaFolha, visitados); 
+        } else if (linhaAtual > 0 && colunaAtual < arvore[0].length - 1 && arvore[linhaAtual - 1][colunaAtual + 1] != '.') { // Direita cima 
+            soma = andarNaArvoreAteFolha(arvore, linhaAtual - 1, colunaAtual + 1, linhaFolha, colunaFolha, visitados); 
+        } 
+        return somaAtual + soma; 
+     } 
+     
+     
+     public static void mostrarCaminhosBifurcacoes(char[][] arvore) {
+        // Percorrer a árvore para encontrar bifurcações (V ou W)
+        for (int linha = 0; linha < arvore.length; linha++) {
+            for (int coluna = 0; coluna < arvore[0].length; coluna++) {
+                if (arvore[linha][coluna] == 'V' || arvore[linha][coluna] == 'W') {
+                    System.out.println("\nBifurcação encontrada em (" + linha + ", " + coluna + ")");
+    
+                    // Exibir os caminhos a partir dessa bifurcação
+                    Set<String> visitados = new HashSet<>();
+                    if (linha > 0 && coluna > 0 && arvore[linha - 1][coluna - 1] != '.') { // Esquerda
+                        System.out.println("Caminho à esquerda:");
+                        mostrarCaminho(arvore, linha - 1, coluna - 1, visitados);
+                    }
+                    if (linha > 0 && arvore[linha - 1][coluna] != '.') { // Centro (para W)
+                        if (arvore[linha][coluna] == 'W') {
+                            System.out.println("Caminho central:");
+                            mostrarCaminho(arvore, linha - 1, coluna, visitados);
+                        }
+                    }
+                    if (linha > 0 && coluna < arvore[0].length - 1 && arvore[linha - 1][coluna + 1] != '.') { // Direita
+                        System.out.println("Caminho à direita:");
+                        mostrarCaminho(arvore, linha - 1, coluna + 1, visitados);
+                    }
+                }
+            }
         }
     }
-
-    public static class Resultado {
-        public String melhorCaminho;
-        public int maiorSoma;
-
-        public Resultado(String melhorCaminho, int maiorSoma) {
-            this.melhorCaminho = melhorCaminho;
-            this.maiorSoma = maiorSoma;
-        }
-    }
-
-    public static int somarValoresDosGalhos(Nodo raiz) {
-        if (raiz == null) {
-            return 0;  // Se a raiz for nula, retorne 0
-        }
-
-        System.out.println("Somando valores dos galhos...");
-
-        // Lista temporária para armazenar os nodos de cada galho
-        List<Nodo> galhoTemporario = new ArrayList<>();
-        List<Nodo> melhorGalho = new ArrayList<>();
-        int somaMelhorGalho = 0;
-
-        // Percorrer a árvore e somar os valores de cada galho
-        percorrerArvore(raiz, galhoTemporario, 0, melhorGalho);
-
-        // Calcular a soma dos valores do melhor galho
-        for (Nodo nodo : melhorGalho) {
-            somaMelhorGalho += nodo.valor;
-        }
-
-        System.out.println("Melhor caminho: ");
-        for (Nodo nodo : melhorGalho) {
-            System.out.print(nodo.valor + " ");
-        }
-        System.out.println();
-
-        return somaMelhorGalho;  // Retorna a soma do melhor galho
-    }
-
-    private static void percorrerArvore(Nodo nodo, List<Nodo> galhoAtual, int somaAtual, List<Nodo> melhorGalho) {
-        if (nodo == null) {
+    
+    private static void mostrarCaminho(char[][] arvore, int linhaAtual, int colunaAtual, Set<String> visitados) {
+        // Marcar a posição atual como visitada
+        String posicaoAtual = linhaAtual + "," + colunaAtual;
+        if (visitados.contains(posicaoAtual)) {
             return;
         }
-        
-        galhoAtual.add(nodo);
-
-        somaAtual += nodo.valor;
-
-        // Se o nodo atual não tiver filhos (é uma folha), verificamos se é o melhor caminho
-        if (nodo.esquerda == null && nodo.centro == null && nodo.direita == null) {
-            // Se o caminho atual for maior, atualiza o melhor caminho
-            if (somaAtual > calcularSoma(melhorGalho)) {
-                melhorGalho.clear();
-                melhorGalho.addAll(galhoAtual);
-            }
-        } else {
-            // Continua percorrendo para os filhos (esquerda, centro, direita)
-            percorrerArvore(nodo.esquerda, galhoAtual, somaAtual, melhorGalho);
-            percorrerArvore(nodo.centro, galhoAtual, somaAtual, melhorGalho);
-            percorrerArvore(nodo.direita, galhoAtual, somaAtual, melhorGalho);
+        visitados.add(posicaoAtual);
+    
+        // Exibir a posição atual
+        System.out.println("Posição: (" + linhaAtual + ", " + colunaAtual + ") - Valor: " +
+                (Character.isDigit(arvore[linhaAtual][colunaAtual]) ? arvore[linhaAtual][colunaAtual] : "Sem valor"));
+    
+        // Continuar para o próximo nó no caminho
+        if (linhaAtual > 0 && colunaAtual > 0 && arvore[linhaAtual - 1][colunaAtual - 1] != '.') { // Esquerda
+            mostrarCaminho(arvore, linhaAtual - 1, colunaAtual - 1, visitados);
         }
-
-        galhoAtual.remove(galhoAtual.size() - 1);
-    }
-
-    private static int calcularSoma(List<Nodo> galho) {
-        int soma = 0;
-        for (Nodo nodo : galho) {
-            soma += nodo.valor;
+        if (linhaAtual > 0 && arvore[linhaAtual - 1][colunaAtual] != '.') { // Centro
+            mostrarCaminho(arvore, linhaAtual - 1, colunaAtual, visitados);
         }
-        return soma;
-    }
-
-    public static void testarLeituraUltimaLinha(char[][] matriz) {
-    int linhas = matriz.length;
-    int colunas = matriz[0].length;
-
-    // Imprime a última linha da matriz
-    System.out.println("Última linha da matriz:");
-    for (int j = 0; j < colunas; j++) {
-        System.out.print(matriz[linhas - 1][j]);  // Lê e imprime cada caractere da última linha
-    }
-    System.out.println();  // Pula para a próxima linha no console
-}
-
-    public static char[][] lerArquivoEPreencherMatriz(String nomeArquivo) throws IOException {
-        BufferedReader reader = new BufferedReader(new FileReader(nomeArquivo));
-        String linha;
-
-        // Leitura da primeira linha que contém as dimensões da matriz
-        linha = reader.readLine();
-        String[] dimensoes = linha.split(" ");
-        int linhas = Integer.parseInt(dimensoes[0]);
-        int colunas = Integer.parseInt(dimensoes[1]);
-
-        // Inicializando a matriz
-        char[][] matriz = new char[linhas][colunas];
-
-        // Preenchendo a matriz com o conteúdo do arquivo linha por linha
-        int i = 0;
-        while ((linha = reader.readLine()) != null && i < linhas) {
-            for (int j = 0; j < Math.min(linha.length(), colunas); j++) {
-                matriz[i][j] = linha.charAt(j);  // Populando a matriz com cada caractere da linha
-            }
-            i++;
-        }
-        reader.close();
-
-        // Imprimir a matriz para verificar se está correta
-        System.out.println("Matriz da árvore lida do arquivo:");
-        imprimirMatriz(matriz);
-
-        return matriz;
-    }
-
-    public static void imprimirMatriz(char[][] matriz) {
-        for (int i = 0; i < matriz.length; i++) {
-            for (int j = 0; j < matriz[0].length; j++) {
-                System.out.print(matriz[i][j] + " ");
-            }
-            System.out.println();
+        if (linhaAtual > 0 && colunaAtual < arvore[0].length - 1 && arvore[linhaAtual - 1][colunaAtual + 1] != '.') { // Direita
+            mostrarCaminho(arvore, linhaAtual - 1, colunaAtual + 1, visitados);
         }
     }
+    
 
-    public static Nodo construirArvoreAPartirDaRaiz(char[][] matriz) {
-        int linhas = matriz.length;
-        int colunas = matriz[0].length;
-        Nodo[][] nodos = new Nodo[linhas][colunas];  // Matriz para armazenar os nodos criados
-    
-        // Primeiro, identificar a raiz na última linha da matriz
-        Nodo raiz = null;
-        for (int j = 0; j < colunas; j++) {
-            if (matriz[linhas - 1][j] != ' ') {  // Qualquer coisa que não seja espaço vazio é considerada raiz
-                raiz = new Nodo(0);  // Nodo vazio para representar a raiz
-                nodos[linhas - 1][j] = raiz;
-                System.out.println("Raiz encontrada na posição: " + (linhas - 1) + ", " + j);
-                break;
-            }
-        }
-    
-        if (raiz == null) {
-            System.out.println("Nenhuma raiz encontrada. Verifique a matriz.");
-            return null;
-        }
-    
-        // Agora, subimos pela matriz para construir os galhos da árvore
-        for (int i = linhas - 2; i >= 0; i--) {  // Começamos na linha anterior à última
-            for (int j = 0; j < colunas; j++) {
-                char atual = matriz[i][j];
-    
-                // Ignorar espaços em branco
-                if (atual == ' ') {
-                    continue;  // Espaço em branco, pula para o próximo
-                }
-    
-                // Criar nodos numerados
-                if (Character.isDigit(atual)) {
-                    int valor = Character.getNumericValue(atual);
-                    nodos[i][j] = new Nodo(valor);
-                    System.out.println("Nodo com valor " + valor + " criado na posição: " + i + ", " + j);
-                }
-    
-                // Criar folhas
-                if (atual == '#') {
-                    nodos[i][j] = new Nodo(0);  // Folha tem valor 0
-                    System.out.println("Folha criada na posição: " + i + ", " + j);
-                }
-    
-                // Criar nodos vazios para |, /, \, V, W
-                if (atual == '|' || atual == '/' || atual == '\\' || atual == 'V' || atual == 'W') {
-                    nodos[i][j] = new Nodo(0);  // Nodo vazio
-                    System.out.println("Nodo vazio criado na posição: " + i + ", " + j);
-                }
-            }
-        }
-    
-        // Conectar os nodos com base nos ponteiros, subindo até a segunda linha da matriz
-        for (int i = linhas - 2; i >= 0; i--) {  // Iniciamos da linha anterior à última e subimos
-            for (int j = 0; j < colunas; j++) {
-                if (nodos[i][j] != null) {
-                    char atual = matriz[i][j];
-    
-                    // Conectar nodos vazios e numerados com base nos símbolos
-                    if (atual == '|') {
-                        if (i - 1 >= 0) {  // Verifica se não estamos na primeira linha
-                            nodos[i][j].centro = nodos[i - 1][j];  // Nodo diretamente acima
-                            System.out.println("Conectando nodo " + i + ", " + j + " ao nodo acima.");
-                        }
-                    }
-                    if (atual == '\\') {
-                        if (i - 1 >= 0 && j - 1 >= 0) {  // Verifica se não estamos na borda esquerda
-                            nodos[i][j].esquerda = nodos[i - 1][j - 1];  // Nodo à esquerda acima
-                            System.out.println("Conectando nodo " + i + ", " + j + " ao nodo à esquerda.");
-                        }
-                    }
-                    if (atual == '/') {
-                        if (i - 1 >= 0 && j + 1 < colunas) {  // Verifica se não estamos na borda direita
-                            nodos[i][j].direita = nodos[i - 1][j + 1];  // Nodo à direita acima
-                            System.out.println("Conectando nodo " + i + ", " + j + " ao nodo à direita.");
-                        }
-                    }
-    
-                    if (Character.isDigit(atual)) {
-                        // Conectar nodos numerados com base nos símbolos acima
-                        if (i - 1 >= 0 && matriz[i - 1][j] == '|') {
-                            nodos[i][j].centro = nodos[i - 1][j];  // Nodo acima
-                            System.out.println("Conectando nodo " + i + ", " + j + " ao centro.");
-                        }
-                        if (i - 1 >= 0 && j - 1 >= 0 && matriz[i - 1][j - 1] == '\\') {
-                            nodos[i][j].esquerda = nodos[i - 1][j - 1];  // Nodo à esquerda
-                            System.out.println("Conectando nodo " + i + ", " + j + " à esquerda.");
-                        }
-                        if (i - 1 >= 0 && j + 1 < colunas && matriz[i - 1][j + 1] == '/') {
-                            nodos[i][j].direita = nodos[i - 1][j + 1];  // Nodo à direita
-                            System.out.println("Conectando nodo " + i + ", " + j + " à direita.");
-                        }
-                    }
-                }
-            }
-        }
-    
-        return raiz;
-    }    
-    
-    public static void imprimirArvore(Nodo nodo, String prefixo) {
-        if (nodo == null) {
-            return;  
-        }
-        if (nodo.valor == 0) {
-            System.out.println(prefixo + "+-- [vazio]");
-        } else {
-            System.out.println(prefixo + "+-- " + nodo.valor);
-        }
-        if (nodo.esquerda != null) {
-            imprimirArvore(nodo.esquerda, prefixo + "|   ");
-        }
-        if (nodo.centro != null) {
-            imprimirArvore(nodo.centro, prefixo + "|   ");
-        }
-        if (nodo.direita != null) {
-            imprimirArvore(nodo.direita, prefixo + "|   ");
-        }
-    }
+     public static void main(String[] args) { 
+        try { 
+            // Ler o arquivo e obter a matriz da árvore 
+            char[][] arvore = ArvoreFrutinhas.lerArquivo("casof30.txt"); 
+            ArvoreFrutinhas.imprimirArvore(arvore); 
 
+            ArvoreFrutinhas.mostrarCaminhosBifurcacoes(arvore);
+            
+            // Calcular e exibir a soma de cada galho 
+            ArvoreFrutinhas.calcularSomasDosGalhos(arvore); 
+        } catch (IOException e) { 
+            System.err.println("Erro ao ler o arquivo: " + e.getMessage()); 
+        } 
+     } 
 }
