@@ -91,16 +91,23 @@ public class ArvoreFrutinhas {
         }
         System.out.println("Raiz encontrada na posição (" + linhaRaiz + ", " + colunaRaiz + ")");
     
+        int somaTotal = 0;
+
         // Para cada folha, percorre o caminho da raiz até ela e soma os valores
         for (int i = 0; i < folhas.size(); i++) {
             int[] folha = folhas.get(i);
             Set<String> visitados = new HashSet<>(); // Para garantir que não visitamos a mesma posição mais de uma vez
-            int somaGalho = andarDaRaizAteFolha(arvore, linhaRaiz, colunaRaiz, folha[0], folha[1], visitados);
-            System.out.println("Soma do galho " + (i + 1) + ": " + somaGalho);
+            somaTotal = andarDaRaizAteFolha(arvore, linhaRaiz, colunaRaiz, folha[0], folha[1], visitados);
         }
+        System.out.println("Soma do melhor caminho: " + somaTotal);
     }
-    
+        
     private static int andarDaRaizAteFolha(char[][] arvore, int linhaAtual, int colunaAtual, int linhaFolha, int colunaFolha, Set<String> visitados) {
+        // Checar se chegamos à folha
+        if (linhaAtual == linhaFolha && colunaAtual == colunaFolha) {
+            return Character.isDigit(arvore[linhaAtual][colunaAtual]) ? Character.getNumericValue(arvore[linhaAtual][colunaAtual]) : 0;
+        }
+    
         // Marcar a posição atual como visitada
         String posicaoAtual = linhaAtual + "," + colunaAtual;
         if (visitados.contains(posicaoAtual)) {
@@ -109,29 +116,27 @@ public class ArvoreFrutinhas {
         visitados.add(posicaoAtual);
     
         // Adicionar o valor atual à soma, se for um número
-        int somaAtual = 0;
-        if (Character.isDigit(arvore[linhaAtual][colunaAtual])) {
-            somaAtual = Character.getNumericValue(arvore[linhaAtual][colunaAtual]);
-        }
+        int somaAtual = Character.isDigit(arvore[linhaAtual][colunaAtual]) ? Character.getNumericValue(arvore[linhaAtual][colunaAtual]) : 0;
     
-        // Checar se chegamos à folha
-        if (linhaAtual == linhaFolha && colunaAtual == colunaFolha) {
-            return somaAtual; // Chegamos à folha, retornar a soma
-        }
+        // Continuar descendo para os próximos nós (esquerda, cima, direita)
+        int somaEsquerda = 0, somaCentro = 0, somaDireita = 0;
     
-        // Continuar descendo para os próximos nós (esquerda, baixo, direita)
-        int soma = 0;
         if (linhaAtual > 0 && colunaAtual > 0 && arvore[linhaAtual - 1][colunaAtual - 1] != '.') { // Esquerda cima
-            soma = andarDaRaizAteFolha(arvore, linhaAtual - 1, colunaAtual - 1, linhaFolha, colunaFolha, visitados);
-        } else if (linhaAtual > 0 && arvore[linhaAtual - 1][colunaAtual] != '.') { // Cima
-            soma = andarDaRaizAteFolha(arvore, linhaAtual - 1, colunaAtual, linhaFolha, colunaFolha, visitados);
-        } else if (linhaAtual > 0 && colunaAtual < arvore[0].length - 1 && arvore[linhaAtual - 1][colunaAtual + 1] != '.') { // Direita cima
-            soma = andarDaRaizAteFolha(arvore, linhaAtual - 1, colunaAtual + 1, linhaFolha, colunaFolha, visitados);
+            somaEsquerda = andarDaRaizAteFolha(arvore, linhaAtual - 1, colunaAtual - 1, linhaFolha, colunaFolha, visitados);
         }
     
-        return somaAtual + soma;
+        if (linhaAtual > 0 && arvore[linhaAtual - 1][colunaAtual] != '.') { // Cima
+            somaCentro = andarDaRaizAteFolha(arvore, linhaAtual - 1, colunaAtual, linhaFolha, colunaFolha, visitados);
+        }
+    
+        if (linhaAtual > 0 && colunaAtual < arvore[0].length - 1 && arvore[linhaAtual - 1][colunaAtual + 1] != '.') { // Direita cima
+            somaDireita = andarDaRaizAteFolha(arvore, linhaAtual - 1, colunaAtual + 1, linhaFolha, colunaFolha, visitados);
+        }
+    
+        // Retorna o valor atual mais a soma do melhor caminho (maior soma)
+        return somaAtual + Math.max(somaEsquerda, Math.max(somaCentro, somaDireita));
     }
-      
+       
 
      public static void mostrarCaminhosBifurcacoes(char[][] arvore) {
         // Percorrer a árvore para encontrar bifurcações (V ou W)
@@ -189,7 +194,7 @@ public class ArvoreFrutinhas {
      public static void main(String[] args) { 
         try { 
             // Ler o arquivo e obter a matriz da árvore 
-            char[][] arvore = ArvoreFrutinhas.lerArquivo("casof30.txt"); 
+            char[][] arvore = ArvoreFrutinhas.lerArquivo("casof500.txt"); 
             ArvoreFrutinhas.imprimirArvore(arvore); 
 
 
