@@ -1,10 +1,10 @@
 
 import java.io.*; 
-import java.util.*; 
+import java.util.*;
  
 public class ArvoreFrutinhas { 
+
     // Métodos para ler o arquivo // 
- 
     public static char[][] lerArquivo(String nomeArquivo) throws IOException { 
         BufferedReader br = new BufferedReader(new FileReader(nomeArquivo)); 
         List<char[]> linhas = new ArrayList<>(); 
@@ -51,7 +51,6 @@ public class ArvoreFrutinhas {
         } 
         bw.close(); 
     } 
- 
     // Métodos para ler o arquivo // 
  
     // Método de Teste // 
@@ -66,66 +65,74 @@ public class ArvoreFrutinhas {
     } 
     // Método de Teste // 
  
-    public static void calcularSomasDosGalhos(char[][] arvore) { 
-        // Listar todas as posições de folhas (marcadas com '#') 
-        List<int[]> folhas = new ArrayList<>(); 
-        for (int linha = 0; linha < arvore.length; linha++) { 
-            for (int coluna = 0; coluna < arvore[0].length; coluna++) { 
-                if (arvore[linha][coluna] == '#') { 
-                    folhas.add(new int[]{linha, coluna}); // Adiciona a posição da folha 
-                } 
-            } 
-        } 
-        // Encontrar a raiz (V ou |) na última linha 
-        int linhaRaiz = arvore.length - 1; 
-        int colunaRaiz = -1; 
-        for (int coluna = 0; coluna < arvore[0].length; coluna++) { 
-            if (arvore[linhaRaiz][coluna] == 'V' || arvore[linhaRaiz][coluna] == '|') { 
-                colunaRaiz = coluna; 
-                break; 
-            } 
-        } 
-        if (colunaRaiz == -1) { 
-            System.out.println("Raiz não encontrada."); 
-            return; 
-        } 
-        System.out.println("Raiz encontrada na posição (" + linhaRaiz + ", " + colunaRaiz + ")"); 
-        // Para cada folha, percorre o caminho da raiz até ela e soma os valores 
-        for (int i = 0; i < folhas.size(); i++) { 
-            int[] folha = folhas.get(i); 
-            Set<String> visitados = new HashSet<>(); // Para garantir que não visitamos a mesma posição mais de uma vez 
-            int somaGalho = andarNaArvoreAteFolha(arvore, linhaRaiz, colunaRaiz, folha[0], folha[1], visitados); 
-            System.out.println("Soma do galho " + (i + 1) + ": " + somaGalho); 
-        } 
-     } 
-     
-    private static int andarNaArvoreAteFolha(char[][] arvore, int linhaAtual, int colunaAtual, int linhaFolha, int colunaFolha, Set<String> visitados) { 
+    public static void calcularSomasDosGalhos(char[][] arvore) {
+        // Listar todas as posições de folhas (marcadas com '#')
+        List<int[]> folhas = new ArrayList<>();
+        for (int linha = 0; linha < arvore.length; linha++) {
+            for (int coluna = 0; coluna < arvore[0].length; coluna++) {
+                if (arvore[linha][coluna] == '#') {
+                    folhas.add(new int[]{linha, coluna}); // Adiciona a posição da folha
+                }
+            }
+        }
+    
+        // Encontrar a raiz (V, W ou |) na última linha
+        int linhaRaiz = arvore.length - 1;
+        int colunaRaiz = -1;
+        for (int coluna = 0; coluna < arvore[0].length; coluna++) {
+            if (arvore[linhaRaiz][coluna] == 'V' || arvore[linhaRaiz][coluna] == 'W' || arvore[linhaRaiz][coluna] == '|') {
+                colunaRaiz = coluna;
+                break;
+            }
+        }
+        if (colunaRaiz == -1) {
+            System.out.println("Raiz não encontrada.");
+            return;
+        }
+        System.out.println("Raiz encontrada na posição (" + linhaRaiz + ", " + colunaRaiz + ")");
+    
+        // Para cada folha, percorre o caminho da raiz até ela e soma os valores
+        for (int i = 0; i < folhas.size(); i++) {
+            int[] folha = folhas.get(i);
+            Set<String> visitados = new HashSet<>(); // Para garantir que não visitamos a mesma posição mais de uma vez
+            int somaGalho = andarDaRaizAteFolha(arvore, linhaRaiz, colunaRaiz, folha[0], folha[1], visitados);
+            System.out.println("Soma do galho " + (i + 1) + ": " + somaGalho);
+        }
+    }
+    
+    private static int andarDaRaizAteFolha(char[][] arvore, int linhaAtual, int colunaAtual, int linhaFolha, int colunaFolha, Set<String> visitados) {
+        // Marcar a posição atual como visitada
+        String posicaoAtual = linhaAtual + "," + colunaAtual;
+        if (visitados.contains(posicaoAtual)) {
+            return 0; // Já foi visitado, evitar revisitar
+        }
+        visitados.add(posicaoAtual);
+    
+        // Adicionar o valor atual à soma, se for um número
+        int somaAtual = 0;
+        if (Character.isDigit(arvore[linhaAtual][colunaAtual])) {
+            somaAtual = Character.getNumericValue(arvore[linhaAtual][colunaAtual]);
+        }
+    
         // Checar se chegamos à folha
+        if (linhaAtual == linhaFolha && colunaAtual == colunaFolha) {
+            return somaAtual; // Chegamos à folha, retornar a soma
+        }
+    
+        // Continuar descendo para os próximos nós (esquerda, baixo, direita)
+        int soma = 0;
+        if (linhaAtual > 0 && colunaAtual > 0 && arvore[linhaAtual - 1][colunaAtual - 1] != '.') { // Esquerda cima
+            soma = andarDaRaizAteFolha(arvore, linhaAtual - 1, colunaAtual - 1, linhaFolha, colunaFolha, visitados);
+        } else if (linhaAtual > 0 && arvore[linhaAtual - 1][colunaAtual] != '.') { // Cima
+            soma = andarDaRaizAteFolha(arvore, linhaAtual - 1, colunaAtual, linhaFolha, colunaFolha, visitados);
+        } else if (linhaAtual > 0 && colunaAtual < arvore[0].length - 1 && arvore[linhaAtual - 1][colunaAtual + 1] != '.') { // Direita cima
+            soma = andarDaRaizAteFolha(arvore, linhaAtual - 1, colunaAtual + 1, linhaFolha, colunaFolha, visitados);
+        }
+    
+        return somaAtual + soma;
+    }
+      
 
-        if (linhaAtual == linhaFolha && colunaAtual == colunaFolha) { 
-            return Character.isDigit(arvore[linhaAtual][colunaAtual]) ? Character.getNumericValue(arvore[linhaAtual][colunaAtual]) : 0; 
-        } 
-        // Marcar posição atual como visitada 
-        String posicaoAtual = linhaAtual + "," + colunaAtual; 
-        if (visitados.contains(posicaoAtual)) { 
-            return 0; 
-        } 
-        visitados.add(posicaoAtual); 
-        // Somar o valor atual, se for um número 
-        int somaAtual = Character.isDigit(arvore[linhaAtual][colunaAtual]) ? Character.getNumericValue(arvore[linhaAtual][colunaAtual]) : 0; 
-        // Checar os movimentos possíveis 
-        int soma = 0; 
-        if (linhaAtual > 0 && colunaAtual > 0 && arvore[linhaAtual - 1][colunaAtual - 1] != '.') { // Esquerda cima 
-            soma = andarNaArvoreAteFolha(arvore, linhaAtual - 1, colunaAtual - 1, linhaFolha, colunaFolha, visitados); 
-        } else if (linhaAtual > 0 && arvore[linhaAtual - 1][colunaAtual] != '.') { // Cima 
-            soma = andarNaArvoreAteFolha(arvore, linhaAtual - 1, colunaAtual, linhaFolha, colunaFolha, visitados); 
-        } else if (linhaAtual > 0 && colunaAtual < arvore[0].length - 1 && arvore[linhaAtual - 1][colunaAtual + 1] != '.') { // Direita cima 
-            soma = andarNaArvoreAteFolha(arvore, linhaAtual - 1, colunaAtual + 1, linhaFolha, colunaFolha, visitados); 
-        } 
-        return somaAtual + soma; 
-     } 
-     
-     
      public static void mostrarCaminhosBifurcacoes(char[][] arvore) {
         // Percorrer a árvore para encontrar bifurcações (V ou W)
         for (int linha = 0; linha < arvore.length; linha++) {
@@ -185,8 +192,9 @@ public class ArvoreFrutinhas {
             char[][] arvore = ArvoreFrutinhas.lerArquivo("casof30.txt"); 
             ArvoreFrutinhas.imprimirArvore(arvore); 
 
+
             ArvoreFrutinhas.mostrarCaminhosBifurcacoes(arvore);
-            
+
             // Calcular e exibir a soma de cada galho 
             ArvoreFrutinhas.calcularSomasDosGalhos(arvore); 
         } catch (IOException e) { 
